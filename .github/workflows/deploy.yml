@@ -81,6 +81,24 @@ jobs:
           echo "Manual sync required: Please log into Coolify and trigger the deployment manually."
 
       # ==========================================
+      # SUCCESS ALERTS
+      # ==========================================
+      - name: Send Telegram Success Alert (Manual Sync Reminder)
+        if: success() && github.ref == 'refs/heads/main'
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            ✅ Production Build Successful!
+
+            Repository: ${{ github.repository }}
+            Branch: main
+
+            The new image has been securely pushed to GHCR. 
+            ⚠️ Please log into Coolify and manually sync the deployment to push it live.
+
+      # ==========================================
       # FAILURE ALERTS
       # ==========================================
       - name: Send Telegram Failure Alert
@@ -91,6 +109,8 @@ jobs:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           message: |
             ❌ Build/Deployment Pipeline Failed!
+
             Repository: ${{ github.repository }}
             Branch: ${{ github.ref_name }}
-            View Details: https://github.com/YourOrg/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            View Details: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
