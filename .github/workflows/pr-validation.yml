@@ -1,10 +1,7 @@
-name: CI — PR Quality Validation
+name: CI — Shared PR Quality Validation
 
 on:
-  pull_request:
-    branches:
-      - main
-      - staging
+  workflow_call: # This is the critical line that allows it to be reused
 
 jobs:
   validate:
