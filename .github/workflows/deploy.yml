@@ -1,0 +1,96 @@
+name: CD — Shared Build and Conditional Deploy
+
+on:
+  workflow_call:
+    inputs:
+      registry:
+        required: false
+        type: string
+        default: "ghcr.io"
+      image_name:
+        required: false
+        type: string
+    secrets:
+      COOLIFY_WEBHOOK_STAGING:
+        required: true
+      COOLIFY_TOKEN:
+        required: true
+      TELEGRAM_CHAT_ID:
+        required: true
+      TELEGRAM_BOT_TOKEN:
+        required: true
+
+env:
+  REGISTRY: ${{ inputs.registry || 'ghcr.io' }}
+  IMAGE_NAME: ${{ inputs.image_name || github.repository }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ==========================================
+      # CONDITIONAL DEPLOYMENT LOGIC
+      # ==========================================
+      - name: Trigger Coolify Webhook (Staging Only)
+        if: github.ref == 'refs/heads/staging'
+        run: |
+          echo "Deploying to Staging automatically..."
+          curl --request GET '${{ secrets.COOLIFY_WEBHOOK_STAGING }}' \
+               --header 'Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}'
+
+      - name: Log Manual Sync Requirement (Main Only)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Production image pushed to GHCR successfully."
+          echo "Manual sync required: Please log into Coolify and trigger the deployment manually."
+
+      # ==========================================
+      # FAILURE ALERTS
+      # ==========================================
+      - name: Send Telegram Failure Alert
+        if: failure()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            ❌ Build/Deployment Pipeline Failed!
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            View Details: https://github.com/YourOrg/${{ github.repository }}/actions/runs/${{ github.run_id }}
