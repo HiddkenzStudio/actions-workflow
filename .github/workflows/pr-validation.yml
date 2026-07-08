@@ -35,7 +35,13 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: 1
 
-      - name: Analyze Bundle Size
-        uses: ampproject/filesize-action@v2
-        with:
-          path: ".next/static/**/*.js"
+      - name: Analyze Bundle Size (Native)
+        run: |
+          echo "### 📦 Next.js JavaScript Bundle Sizes" >> $GITHUB_STEP_SUMMARY
+          echo "| Size | File Path |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+
+          # Find all JS files, calculate size, sort largest to smallest, and format as a Markdown table
+          find .next/static -type f -name "*.js" -exec du -sh {} + | sort -hr | while read size file; do
+            echo "| $size | \`$file\` |" >> $GITHUB_STEP_SUMMARY
+          done
