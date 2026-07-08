@@ -10,38 +10,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 1. Install pnpm FIRST
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
 
-      # 2. Setup Node 24 and cache the pnpm store
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: "pnpm"
 
-      # 3. Use pnpm for strict dependency installation
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      # 4. Native TypeScript check
+      # Uses your local package.json script
       - name: Run TypeScript Type Check
-        run: pnpm exec tsc --noEmit
+        run: pnpm run typecheck
 
-      # 5. Native Next.js/ESLint (Replaces the slow Super-Linter)
       - name: Run Linter
         run: pnpm run lint
 
-      # 6. Build using pnpm
       - name: Next.js Production Build (Asset Check)
         run: pnpm run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
 
-      # 7. Asset summary
       - name: Analyze Bundle Size (Native)
         run: |
           echo "### 📦 Next.js JavaScript Bundle Sizes" >> $GITHUB_STEP_SUMMARY
