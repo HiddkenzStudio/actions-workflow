@@ -1,7 +1,7 @@
 name: CI — Shared PR Quality Validation
 
 on:
-  workflow_call: # This is the critical line that allows it to be reused
+  workflow_call:
 
 jobs:
   validate:
@@ -10,38 +10,44 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 1. Install pnpm FIRST
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      # 2. Setup Node 24 and cache the pnpm store
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: "24"
+          cache: "pnpm"
 
+      # 3. Use pnpm for strict dependency installation
       - name: Install Dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
+      # 4. Native TypeScript check
       - name: Run TypeScript Type Check
-        run: npx tsc --noEmit
+        run: pnpm exec tsc --noEmit
 
-      - name: Run Super-Linter
-        uses: super-linter/super-linter@v6
-        env:
-          VALIDATE_ALL_CODEBASE: false
-          VALIDATE_TYPESCRIPT_ESLINT: true
-          VALIDATE_JAVASCRIPT_ESLINT: true
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 5. Native Next.js/ESLint (Replaces the slow Super-Linter)
+      - name: Run Linter
+        run: pnpm run lint
 
+      # 6. Build using pnpm
       - name: Next.js Production Build (Asset Check)
-        run: npm run build
+        run: pnpm run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
 
+      # 7. Asset summary
       - name: Analyze Bundle Size (Native)
         run: |
           echo "### 📦 Next.js JavaScript Bundle Sizes" >> $GITHUB_STEP_SUMMARY
           echo "| Size | File Path |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
 
-          # Find all JS files, calculate size, sort largest to smallest, and format as a Markdown table
           find .next/static -type f -name "*.js" -exec du -sh {} + | sort -hr | while read size file; do
             echo "| $size | \`$file\` |" >> $GITHUB_STEP_SUMMARY
           done
