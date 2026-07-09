@@ -40,11 +40,11 @@ To ensure your target repositories comply with the pipeline's code quality and r
 Run the following commands in your target project (assuming `pnpm`):
 
 ```bash
-# Initialize Husky
-pnpm exec husky init
+# Install Husky, Commitlint, and the conventional config
+pnpm add -D husky @commitlint/config-conventional @commitlint/cli
 
-# Install Commitlint and the conventional config
-pnpm add -D @commitlint/config-conventional @commitlint/cli
+# Initialize Husky (creates .husky/ directory and updates package.json)
+pnpm exec husky init
 
 # Configure Commitlint
 echo "export default { extends: ['@commitlint/config-conventional'] };" > commitlint.config.mjs
