@@ -33,6 +33,71 @@ A reusable continuous integration workflow for validating Pull Requests in Next.
 - **Build Verification:** Executes a Next.js production build (`pnpm run build`) to ensure there are no build-time errors.
 - **Bundle Analysis:** Analyzes the Next.js JavaScript bundle sizes and generates a markdown table in the GitHub Actions step summary.
 
+## Usage
+
+To use these workflows in your repository, create the following files in your `.github/workflows/` directory.
+
+### 1. Continuous Deployment (`cd.yml`)
+
+Create `.github/workflows/cd.yml`:
+
+```yaml
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+# Explicitly grant the caller workflow permission to write to GHCR, create releases, and open PRs
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+
+jobs:
+  call-deployment:
+    uses: HiddkenzStudio/actions-workflow/.github/workflows/deploy.yml@main
+    with:
+      image_name: ${{ github.repository }}
+    secrets: inherit
+```
+
+### 2. Continuous Integration (`ci.yml`)
+
+Create `.github/workflows/ci.yml`:
+
+```yaml
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - staging
+
+# Explicitly grant permissions needed for code analysis, PR status updates, and PR reads (for Gitleaks)
+permissions:
+  contents: read
+  statuses: write
+  pull-requests: read
+
+jobs:
+  call-pr-validation:
+    uses: HiddkenzStudio/actions-workflow/.github/workflows/pr-validation.yml@main
+    secrets: inherit
+```
+
+### Required Secrets
+
+Ensure the following repository secrets are configured in the caller repository:
+- `GITLEAKS_LICENSE`: License key for Gitleaks.
+- `COOLIFY_WEBHOOK_STAGING`: Webhook URL for staging deployments in Coolify.
+- `COOLIFY_SECRET`: Authorization token for the Coolify webhook.
+- `TELEGRAM_CHAT_ID`: Chat ID for Telegram notifications.
+- `TELEGRAM_BOT_TOKEN`: Bot token for Telegram notifications.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
