@@ -5,6 +5,7 @@
 This repository contains reusable GitHub Actions workflows and related configurations.
 
 ### Key Features
+
 - **Secret Scanning:** Automatically scans PRs for accidentally committed secrets using Gitleaks.
 - **Conventional Commits:** Assumes the Conventional Commits standard (via Husky and Commitlint) for clean, readable commit histories.
 - **Automated Releases:** Uses Release Please to automatically generate semantic version tags and changelogs when merging to `main`.
@@ -41,13 +42,26 @@ Run the following commands in your target project (assuming `pnpm`):
 
 ```bash
 # Install Husky, Commitlint, and the conventional config
-pnpm add -D husky @commitlint/config-conventional @commitlint/cli
+pnpm add -D husky @commitlint/config-conventional @commitlint/cli lint-staged
 
 # Initialize Husky (creates .husky/ directory and updates package.json)
 pnpm exec husky init
 
 # Configure Commitlint
 echo "export default { extends: ['@commitlint/config-conventional'] };" > commitlint.config.mjs
+
+# Configure Lint-Staged
+cat << 'EOF' > .lintstagedrc
+{
+  "*.{js,jsx,ts,tsx}": [
+    "eslint --fix",
+    "prettier --write"
+  ],
+  "*.{json,md,css}": [
+    "prettier --write"
+  ]
+}
+EOF
 
 # Add the commit-msg hook (enforces conventional commits)
 echo 'pnpm exec commitlint --edit "${1}"' > .husky/commit-msg
@@ -130,6 +144,7 @@ jobs:
 ### Required Secrets
 
 Ensure the following repository secrets are configured in the caller repository:
+
 - `GITLEAKS_LICENSE`: License key for Gitleaks.
 - `COOLIFY_WEBHOOK_STAGING`: Webhook URL for staging deployments in Coolify.
 - `COOLIFY_SECRET`: Authorization token for the Coolify webhook.
