@@ -40,6 +40,9 @@ To ensure your target repositories comply with the pipeline's code quality and r
 Run the following commands in your target project (assuming `pnpm`):
 
 ```bash
+# Initialize Husky
+pnpm exec husky init
+
 # Install Commitlint and the conventional config
 pnpm add -D @commitlint/config-conventional @commitlint/cli
 
