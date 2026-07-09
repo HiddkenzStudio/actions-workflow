@@ -33,6 +33,41 @@ A reusable continuous integration workflow for validating Pull Requests in Next.
 - **Build Verification:** Executes a Next.js production build (`pnpm run build`) to ensure there are no build-time errors.
 - **Bundle Analysis:** Analyzes the Next.js JavaScript bundle sizes and generates a markdown table in the GitHub Actions step summary.
 
+## Setup Instructions for Caller Repositories
+
+To ensure your target repositories comply with the pipeline's code quality and release standards, you should set up Husky, Commitlint, and pre-commit/pre-push hooks.
+
+Run the following commands in your target project (assuming `pnpm`):
+
+```bash
+# Install Commitlint and the conventional config
+pnpm add -D @commitlint/config-conventional @commitlint/cli
+
+# Configure Commitlint
+echo "export default { extends: ['@commitlint/config-conventional'] };" > commitlint.config.mjs
+
+# Add the commit-msg hook (enforces conventional commits)
+echo 'pnpm exec commitlint --edit "${1}"' > .husky/commit-msg
+chmod +x .husky/commit-msg
+
+# Add the pre-commit hook (runs typecheck and linting)
+cat << 'EOF' > .husky/pre-commit
+pnpm typecheck
+pnpm lint-staged
+EOF
+chmod +x .husky/pre-commit
+
+# Add the pre-push hook (runs tests only if a Vitest config exists)
+cat << 'EOF' > .husky/pre-push
+if [ -f "vitest.config.ts" ] || [ -f "vitest.config.js" ] || [ -f "vitest.config.mjs" ]; then
+  pnpm test
+else
+  echo "No vitest config found, skipping tests."
+fi
+EOF
+chmod +x .husky/pre-push
+```
+
 ## Usage
 
 To use these workflows in your repository, create the following files in your `.github/workflows/` directory.
