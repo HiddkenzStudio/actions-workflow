@@ -10,6 +10,10 @@ on:
       image_name:
         required: false
         type: string
+      build_args:
+        required: false
+        type: string
+        default: ""
     secrets:
       COOLIFY_WEBHOOK_STAGING:
         required: true
@@ -77,6 +81,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: ${{ inputs.build_args }}
 
       # ==========================================
       # CONDITIONAL DEPLOYMENT LOGIC
