@@ -113,6 +113,9 @@ jobs:
     uses: HiddkenzStudio/actions-workflow/.github/workflows/deploy.yml@main
     with:
       image_name: ${{ github.repository }}
+      # Optional: Pass build arguments to the Docker build process
+      # build_args: |
+      #   NEXT_PUBLIC_API_KEY=${{ vars.NEXT_PUBLIC_API_KEY }}
     secrets: inherit
 ```
 
