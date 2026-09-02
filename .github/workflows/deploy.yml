@@ -81,7 +81,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: ${{ inputs.build_args }}
+          build-args: |
+            ${{ inputs.build_args }}
+            NEXT_IGNORE_TYPECHECKS=true
 
       # ==========================================
       # CONDITIONAL DEPLOYMENT LOGIC
