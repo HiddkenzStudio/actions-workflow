@@ -90,7 +90,7 @@ jobs:
         if: github.ref == 'refs/heads/staging'
         run: |
           echo "Deploying to Staging automatically..."
-          curl --request GET '${{ secrets.COOLIFY_WEBHOOK_STAGING }}' \
+          curl --request POST '${{ secrets.COOLIFY_WEBHOOK_STAGING }}' \
                --header 'Authorization: Bearer ${{ secrets.COOLIFY_SECRET }}'
 
       - name: Log Manual Sync Requirement (Main Only)
@@ -102,6 +102,20 @@ jobs:
       # ==========================================
       # SUCCESS ALERTS
       # ==========================================
+      - name: Send Telegram Success Alert (Staging Deploy)
+        if: success() && github.ref == 'refs/heads/staging'
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            🚀 Staging Deployment Triggered!
+
+            Repository: ${{ github.repository }}
+            Branch: staging
+
+            The new image has been pushed to GHCR and Coolify deployment triggered automatically.
+
       - name: Send Telegram Success Alert (Manual Sync Reminder)
         if: success() && github.ref == 'refs/heads/main'
         uses: appleboy/telegram-action@master
