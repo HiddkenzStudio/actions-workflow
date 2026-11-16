@@ -47,6 +47,16 @@ jobs:
       - name: Run TypeScript Type Check
         run: pnpm run typecheck
 
+      # Repos whose lint script passes --cache get warm runs (54s → ~2s);
+      # repos without it simply ignore the restored file.
+      - name: Cache ESLint
+        uses: actions/cache@v4
+        with:
+          path: .eslintcache
+          key: eslint-${{ runner.os }}-${{ hashFiles('eslint.config.mjs', 'pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            eslint-${{ runner.os }}-${{ hashFiles('eslint.config.mjs', 'pnpm-lock.yaml') }}-
+
       - name: Run Linter
         run: pnpm run lint
 
