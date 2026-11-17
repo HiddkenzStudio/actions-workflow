@@ -21,10 +21,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
+      # pnpm/action-setup throws when `version` disagrees with the repo's
+      # `packageManager` field, so defer to that field and keep 9 as the
+      # fallback for repositories that do not declare one.
+      - name: Resolve pnpm version
+        id: pnpm-version
+        run: |
+          version=$(node -e "const { packageManager = '' } = require('./package.json'); process.stdout.write(packageManager.startsWith('pnpm@') ? packageManager.slice(5).split('+')[0] : '9')")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ steps.pnpm-version.outputs.version }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
